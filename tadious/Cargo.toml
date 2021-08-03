@@ -11,3 +11,4 @@ tokio = { version = "1.9.0", features = ["full"] }
 thrussh = "0.33.5"
 thrussh-keys = "0.21.0"
 futures = "0.3.16"
+anyhow = "1.0"
