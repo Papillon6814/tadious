@@ -44,3 +44,56 @@ struct Server {
     clients: Arc<Mutex<HashMap<(usize, ChannelId), thrussh::server::Handle>>>,
     id: usize,
 }
+
+impl server::Server for Server {
+    type Handler = Self;
+    fn new(&mut self, _: Option<std::net::SocketAddr>) -> Self {
+        let s = self.clone();
+        self.id += 1;
+        s
+    }
+}
+
+impl server::Handler for Server {
+    type Error = anyhow::Error;
+    type FutureAuth = futures::future::Ready<Result<(Self, server::Auth), anyhow::Error>>;
+    type FutureUnit = futures::future::Ready<Result<(Self, Session), anyhow::Error>>;
+    type FutureBool = futures::future::Ready<Result<(Self, Session, bool), anyhow::Error>>;
+
+    fn finished_auth(mut self, auth: Auth) -> Self::FutureAuth {
+        futures::future::ready(Ok((self, auth)))
+    }
+    
+    fn finished_bool(self, b: bool, s: Session) -> Self::FutureBool {
+        futures::future::ready(Ok((self, s, b)))
+    }
+
+    fn finished(self, s: Session) -> Self::FutureUnit {
+        futures::future::ready(Ok((self, s)))
+    }
+
+    fn channel_open_session(self, channel: ChannelId, session: Session) -> Self::FutureUnit {
+        {
+            let mut clients = self.clients.lock().unwrap();
+            clients.insert((self.id, channel), session.handle());
+        }
+        self.finished(session)
+    }
+
+    fn auth_publickey(self, _: &str, _: &key::PublicKey) -> Self::FutureAuth {
+        self.finished_auth(server::Auth::Accept)
+    }
+
+    fn data(self, channel: ChannelId, data: &[u8], mut session: Session) -> Self::FutureUnit {
+        {
+            let mut clients = self.clients.lock().unwrap();
+            for ((id, channel), ref mut s) in clients.iter_mut() {
+                if *id != self.id {
+                    s.data(*channel, CryptoVec::from_slice(data));
+                }
+            }
+        }
+        session.data(channel, CryptoVec::from_slice(data));
+        self.finished(session)
+    }
+}
