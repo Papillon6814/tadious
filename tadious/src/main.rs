@@ -7,7 +7,6 @@ use thrussh::*;
 use thrussh::server::{Auth, Session};
 use thrussh_keys::*;
 use std::collections::HashMap;
-use futures::Future;
 
 // https://docs.rs/thrussh/0.33.5/thrussh/
 
@@ -32,10 +31,15 @@ async fn main() {
         id: 0
     };
 
-    tokio::time::timeout(
-        std::time::Duration::from_secs(1),
+    let res = tokio::time::timeout(
+        std::time::Duration::from_secs(5),
         thrussh::server::run(config, "0.0.0.0:2222", sh)
-    ).await.unwrap_or(Ok(()));
+    ).await;
+
+    match res {
+        Ok(v) => println!("{:?}", v),
+        Err(err) => println!("{}", err)
+    }
 }
 
 #[derive(Clone)]
