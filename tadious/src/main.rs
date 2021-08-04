@@ -19,10 +19,9 @@ async fn main() {
     config.auth_rejection_time = std::time::Duration::from_secs(3);
     config.keys.push(thrussh_keys::key::KeyPair::generate_ed25519().unwrap());
 
-    if let Some(ip) = public_ip::addr().await {
-        println!("public ip address: {:?}", ip);
-    }
-    println!("Hello, world!");
+    // if let Some(ip) = public_ip::addr().await {
+    //     println!("public ip address: {:?}", ip);
+    // }
 
     let config = Arc::new(config);
     let sh = Server{
@@ -31,15 +30,17 @@ async fn main() {
         id: 0
     };
 
-    let res = tokio::time::timeout(
-        std::time::Duration::from_secs(5),
-        thrussh::server::run(config, "0.0.0.0:2222", sh)
-    ).await;
+    // let res = tokio::time::timeout(
+    //     std::time::Duration::from_secs(1),
+    //     thrussh::server::run(config, "0.0.0.0:2222", sh)
+    // ).await;
 
-    match res {
-        Ok(v) => println!("{:?}", v),
-        Err(err) => println!("{}", err)
-    }
+    thrussh::server::run(config, "0.0.0.0:22", sh).await;
+
+    // match res {
+    //     Ok(v) => println!("{:?}", v),
+    //     Err(err) => println!("{}", err)
+    // }
 }
 
 #[derive(Clone)]
