@@ -19,9 +19,9 @@ async fn main() {
     config.auth_rejection_time = std::time::Duration::from_secs(3);
     config.keys.push(thrussh_keys::key::KeyPair::generate_ed25519().unwrap());
 
-    // if let Some(ip) = public_ip::addr().await {
-    //     println!("public ip address: {:?}", ip);
-    // }
+    if let Some(ip) = public_ip::addr().await {
+        println!("public ip address: {:?}", ip);
+    }
 
     let config = Arc::new(config);
     let sh = Server{
